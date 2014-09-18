@@ -8,9 +8,14 @@ class NetInfo():
         self.eths = {}
 
     def ReadStat(self):
-        f = open("/proc/net/dev")
-        lines = f.readlines()
-        f.close()
+        try:
+            f = open("/proc/net/dev")
+            lines = f.readlines()
+        except IOError:
+            self.eths = {}
+            return {}
+        finally:
+            f.close()
         eths = {}
         for line in lines[2:]:
             con = line.split() 
@@ -31,6 +36,8 @@ class NetInfo():
                     )   
                         )
             intf['uptime'] = self.GetUptime()
+            if intf['uptime'] == 0:
+                return {}
             eths[interface] = intf
             eth = dict(
                         zip(
@@ -42,9 +49,13 @@ class NetInfo():
         return eths
 
     def GetUptime(self):
-        f = open("/proc/uptime",'r')
-        uptime = float(f.readline().split()[0])*1000
-        f.close()
+        try:
+            f = open("/proc/uptime",'r')
+            uptime = float(f.readline().split()[0])*1000
+        except:
+            uptime = 0
+        finally:
+            f.close()
         return uptime
 
     def GetStat(self):
@@ -77,18 +88,24 @@ class NetInfo():
             self.eths[interface].update(eth)
     
     def GetTcpStat(self):
-        f = open('/proc/net/snmp')
-        while True:
-            line = f.readline()
-            if not line:
-                break
-            con = line.split()
-            if con[0] == 'Tcp:' and con[1].isdigit():
-                break
+        try:
+            f = open('/proc/net/snmp')
+            while True:
+                line = f.readline()
+                if not line:
+                    break
+                con = line.split()
+                if con[0] == 'Tcp:' and con[1].isdigit():
+                    break
+        except IOError:
+            return "nodata"
+        finally:
+            f.close()
         if len(con) > 10:
-            return con[9]
+            tcp = con[9]
         else:
-            return 'nodate'
+            tcp = "nodata"
+        return tcp
 
 
 """
